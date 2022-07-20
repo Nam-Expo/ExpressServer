@@ -24,8 +24,9 @@ app.use(
     bodyParser.json()
 )
 
+
 app.get('/', (request: Request, response: Response) => {
-    response.send('<div>James is gay</div>')
+    response.send('<div>web server res</div>')
 })
 
 app.listen(8080, () => {
