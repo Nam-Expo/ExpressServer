@@ -3,20 +3,21 @@ import { NextFunction, Request, Response } from "express"
 import express from "express"
 import bodyParser from 'body-parser'
 import cookieparser from 'cookie-parser'
-import { User, Auth } from "./types"
+import { User, Auth, AccountDB } from "./types"
 import { verify } from "./authentication/jwt"
 import { getAccount } from "./db/fetch"
 import { addUser } from "./db/insert"
 import path from 'path'
+import { ServerError } from './error-handling/ServerError'
 
 const app = express()
+const serverError = new ServerError()
 
 app.use(
     (request: Request, response: Response, next: NextFunction) => {
         response.set({
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, X-PINGOTHER'
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         })
 
         if (request.method === 'OPTIONS') {
@@ -33,20 +34,21 @@ app.use(
 app.use(async (request: Request, response: Response, next: NextFunction) => {
     if(request.cookies.auth){
         let auth: Auth = request.cookies.auth
-        let account = await getAccount(auth.username)
+        let account: AccountDB | null = await getAccount(auth.username)
 
         if(account === null){
-            response.json({code: 505})
+            serverError.sendAccountDoesNotExists(response)
         }
         else {
-            let jwtVerify = verify(auth, account.password)
+            let jwtVerify: string = verify(auth, account.password)
 
             if(jwtVerify === 'expired' || jwtVerify === 'bad'){
-                response.json({code: 504, message: jwtVerify })
+                let errorFunction = jwtVerify ==='expired' ? serverError.sendExpiredToken : serverError.sendBadToken
+                errorFunction(response)
             }
             else {
                 if(jwtVerify !== auth.username){
-                    response.json({ code: 504, message: 'bad' })
+                    serverError.sendBadToken(response)
                 }
                 else{
                     next()
@@ -59,7 +61,7 @@ app.use(async (request: Request, response: Response, next: NextFunction) => {
             next()
         }
         else{
-            response.json({ code: 504, message: 'bad' })
+            serverError.sendUnAuthorizedAccess(response)
         }
     }
 })
