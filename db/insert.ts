@@ -13,12 +13,5 @@ const insert = async (data: any, collectionName: Collection) => {
 }
 
 export const addUser = async (account: AccountDB) => {
-    try{
-        await insert(account, "Accounts")
-        return 'ok'
-    }
-    catch(err){
-        console.log('heres the error', err)
-        return err
-    }
+    await insert(account, "Accounts")
 }

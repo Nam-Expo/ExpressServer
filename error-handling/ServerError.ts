@@ -6,7 +6,8 @@ const ErrorCodes = Object.freeze({
     502: 'Bad Token',
     503: 'Bad Login',
     504: 'Account Exists',
-    505: 'Unauthorized Access'
+    505: 'Unauthorized Access',
+    506: 'null body'
 })
 
 
@@ -33,5 +34,9 @@ export class ServerError {
 
     sendUnAuthorizedAccess(response: Response){
         response.status(505).send(ErrorCodes[505])
+    }
+
+    sendNullBody(response: Response){
+        response.status(506).send(ErrorCodes[506])
     }
 }

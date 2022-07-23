@@ -9,7 +9,9 @@ import { getAccount } from "./db/fetch"
 import { addUser } from "./db/insert"
 import path from 'path'
 import { ServerError } from './error-handling/ServerError'
-
+import { dataBaseError } from './error-handling/DataBaseError'
+import { MongoServerError } from 'mongodb'
+import { UserBuilder } from './accessors/User'
 const app = express()
 const serverError = new ServerError()
 
@@ -57,7 +59,7 @@ app.use(async (request: Request, response: Response, next: NextFunction) => {
         }
     }
     else{
-        if(request.path === '/register' || request.path === '/test'){
+        if(request.path === '/register' || request.path === '/test' || request.path === '/login'){
             next()
         }
         else{
@@ -67,17 +69,29 @@ app.use(async (request: Request, response: Response, next: NextFunction) => {
 })
 
 app.post('/register', async (request: Request, response: Response) => {
-    let user: User = request.body
+    try {
+        let newUser: User = 
+            new UserBuilder()
+                .setEmail(request.body.email)
+                .setUsername(request.body.username)
+                .setPassword(request.body.password)
+                .build()
 
-    let account = await getAccount(user.username)
-
-    if(account !== null){
-        response.json({ code: 504, message: 'account exists' })
+        addUser(newUser).then(() => {
+            //response.cookie()
+            response.status(100).send('ok')
+        }).catch((error: MongoServerError) => {
+            dataBaseError(error, response)
+        }) 
     }
-    else {
-        let res = await addUser(user)
-        console.log(res)
-        response.json({ code: res === 'ok' ? 200 : 504, message: res })
+    catch(error: TypeError | any){
+        if(error instanceof TypeError){
+            serverError.sendNullBody(response)
+        }
+        else{
+            console.log(error)
+            serverError.sendInternalError(response)
+        }
     }
 })
 

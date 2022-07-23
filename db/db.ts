@@ -14,7 +14,7 @@ async function test() {
 
     // Establish and verify connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Connected successfully to server");
+    console.log("Connected successfully to database");
   } finally {
     // Ensures that the client will close when you finish/error
     await client.close();
