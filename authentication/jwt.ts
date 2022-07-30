@@ -1,19 +1,16 @@
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
-import { User, Auth } from '../types';
-import { getHash } from './crypto';
+import { LoginUser, Auth, JWTVerified } from '../types';
 
-export const sign = (user: User) => {
-    return jwt.sign(user.username, 
-        getHash(user.password), 
-        { expiresIn: '10h' } 
+export const sign = (user: LoginUser) => {
+    return jwt.sign(user, user.password, 
+        { expiresIn: "9h" } 
     )
 }
 
-export const verify = (auth: Auth, passwordHash: string): string | 'expired' | 'bad' => {
-    
+export const verify = (user: LoginUser, token: string): JWTVerified | 'expired' | 'bad' => {
     try {
-        var decoded = jwt.verify(auth.token, passwordHash);
-        return decoded as string
+        var decoded = jwt.verify(token, user.password);
+        return decoded as JWTVerified
     } 
     catch(err: JsonWebTokenError | any) {
         let error = err as JsonWebTokenError

@@ -18,10 +18,14 @@ const ErrorCodes: ErrorCodesADT = Object.freeze({
 
 export const dataBaseError = (error: MongoServerError, response: Response) => {
     let code = 590;
-    console.log(error)
+
+
     switch(error.code){
         case 11000:
             code = 550
+
+        default:
+            console.error(error)
     }
 
     response.status(code).send(ErrorCodes[code])

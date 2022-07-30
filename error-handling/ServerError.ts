@@ -5,7 +5,7 @@ const ErrorCodes = Object.freeze({
     501: 'Expired Token',
     502: 'Bad Token',
     503: 'Bad Login',
-    504: 'Account Exists',
+    504: 'Account does not exist',
     505: 'Unauthorized Access',
     506: 'null body'
 })

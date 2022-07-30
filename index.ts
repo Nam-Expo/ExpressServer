@@ -1,103 +1,44 @@
 import 'dotenv/config' 
-import { NextFunction, Request, Response } from "express"
+import { NextFunction, Request, response, Response } from "express"
 import express from "express"
 import bodyParser from 'body-parser'
-import cookieparser from 'cookie-parser'
-import { User, Auth, AccountDB } from "./types"
-import { verify } from "./authentication/jwt"
-import { getAccount } from "./db/fetch"
-import { addUser } from "./db/insert"
-import path from 'path'
+import cookieParser from 'cookie-parser'
+import { AuthHandlers, TestHandlers } from './handlers'
 import { ServerError } from './error-handling/ServerError'
-import { dataBaseError } from './error-handling/DataBaseError'
-import { MongoServerError } from 'mongodb'
-import { UserBuilder } from './accessors/User'
+
 const app = express()
 const serverError = new ServerError()
 
 app.use(
+    (request: Request, response: Response, next: NextFunction) => {
+        console.log('recvied req: ', request.path)
+        next()
+    },
     (request: Request, response: Response, next: NextFunction) => {
         response.set({
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         })
 
-        if (request.method === 'OPTIONS') {
+        if (request.method === 'OPTIONS') {11
             response.sendStatus(200)
         }
         else {
             next()
         }
     },
-    cookieparser(),
+    cookieParser(),
     bodyParser.json()
 )
 
-app.use(async (request: Request, response: Response, next: NextFunction) => {
-    if(request.cookies.auth){
-        let auth: Auth = request.cookies.auth
-        let account: AccountDB | null = await getAccount(auth.username)
+app.use(express.static('public'))
 
-        if(account === null){
-            serverError.sendAccountDoesNotExists(response)
-        }
-        else {
-            let jwtVerify: string = verify(auth, account.password)
+let authHandlers = new AuthHandlers(app, serverError)
+authHandlers.build()
 
-            if(jwtVerify === 'expired' || jwtVerify === 'bad'){
-                let errorFunction = jwtVerify ==='expired' ? serverError.sendExpiredToken : serverError.sendBadToken
-                errorFunction(response)
-            }
-            else {
-                if(jwtVerify !== auth.username){
-                    serverError.sendBadToken(response)
-                }
-                else{
-                    next()
-                }
-            }
-        }
-    }
-    else{
-        if(request.path === '/register' || request.path === '/test' || request.path === '/login'){
-            next()
-        }
-        else{
-            serverError.sendUnAuthorizedAccess(response)
-        }
-    }
-})
+let testHandlers = new TestHandlers(app, serverError)
+testHandlers.build()
 
-app.post('/register', async (request: Request, response: Response) => {
-    try {
-        let newUser: User = 
-            new UserBuilder()
-                .setEmail(request.body.email)
-                .setUsername(request.body.username)
-                .setPassword(request.body.password)
-                .build()
-
-        addUser(newUser).then(() => {
-            //response.cookie()
-            response.status(100).send('ok')
-        }).catch((error: MongoServerError) => {
-            dataBaseError(error, response)
-        }) 
-    }
-    catch(error: TypeError | any){
-        if(error instanceof TypeError){
-            serverError.sendNullBody(response)
-        }
-        else{
-            console.log(error)
-            serverError.sendInternalError(response)
-        }
-    }
-})
-
-app.get('/test', (request: Request, response: Response) => {
-    response.sendFile(path.join(__dirname, 'test-pages/register.html'));
-})
 
 app.listen(8080, () => {
     console.log('listening on: http://localhost:8080')

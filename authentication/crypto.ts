@@ -1,8 +1,8 @@
 import { createHash } from 'crypto'
 
-const hash = createHash('sha256');
 
 export const getHash = (value: string) => {
+    const hash = createHash('sha256');
     hash.update(value);
     return hash.copy().digest('hex')
 }
