@@ -23,7 +23,6 @@ const generateCookie = (response: Response, user: LoginUser) => {
 }
 
 export class AuthHandlers extends Handler {
-
     async authenticationMiddleWear(request: Request, response: Response, next: NextFunction) {
         if (request.cookies.auth) {
             let auth: Auth = new AuthBuilder()
@@ -44,9 +43,15 @@ export class AuthHandlers extends Handler {
                     errorFunction(response)
                 }
                 else {
-                    let { iat, exp, ...jwtAccount } = jwtVerify as JWTVerified
-                    let { _id, email, ...dataBaseAcount } = account
-
+                    let jwtAccount = {
+                        username: jwtVerify.username,
+                        password: jwtVerify.password
+                    }
+                    let dataBaseAcount = {
+                        username: account.username,
+                        password: account.password
+                    }
+                    
                     if (!equal(jwtAccount, dataBaseAcount)) {
                         this.serverError.sendBadToken(response)
                     }
@@ -67,7 +72,6 @@ export class AuthHandlers extends Handler {
     }
 
     async register(request: Request, response: Response, next: NextFunction) {
-        console.log(request.body)
         try {
             let newUser: User =
                 new UserBuilder()

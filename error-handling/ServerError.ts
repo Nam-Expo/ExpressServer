@@ -17,10 +17,12 @@ export class ServerError {
     }
 
     sendExpiredToken(response: Response){
+        response.clearCookie('auth')
         response.status(501).send(ErrorCodes[501])
     }
 
     sendBadToken(response: Response){
+        response.clearCookie('auth')
         response.status(502).send(ErrorCodes[502])
     }
 

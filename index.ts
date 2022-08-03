@@ -1,4 +1,6 @@
 import 'dotenv/config' 
+import https from "https"
+import fs from 'fs'
 import { NextFunction, Request, response, Response } from "express"
 import express from "express"
 import bodyParser from 'body-parser'
@@ -40,6 +42,9 @@ let testHandlers = new TestHandlers(app, serverError)
 testHandlers.build()
 
 
-app.listen(8080, () => {
-    console.log('listening on: http://localhost:8080')
-})
+https.createServer( {
+    key: fs.readFileSync("key.pem"),
+    cert: fs.readFileSync("cert.pem"),
+  },app).listen(8080, ()=>{
+    console.log('server is runing at port 8080')
+});

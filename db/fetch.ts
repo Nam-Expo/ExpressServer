@@ -25,8 +25,6 @@ export const getAccount = async (username: string): Promise<null | AccountDB> =>
 }
 
 export const login = async (user: LoginUser): Promise<boolean> => {
-    console.log('querying db with', user)
     let res = await fetch(user, 'Accounts')
-    console.log('db replied with value, ', res)
     return res ? true: false
 }
