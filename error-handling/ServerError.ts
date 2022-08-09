@@ -1,6 +1,8 @@
 import { Response } from "express";
+import { ErrorHandler } from "./ErrorHandler";
 
-const ErrorCodes = Object.freeze({
+
+export const ErrorCodes = Object.freeze({
     500: 'Internal Error',
     501: 'Expired Token',
     502: 'Bad Token',
@@ -10,8 +12,15 @@ const ErrorCodes = Object.freeze({
     506: 'null body'
 })
 
+export const UnAuthorizedCodes = [
+    501,
+    502,
+    503,
+    504,
+    505,
+]
 
-export class ServerError {
+export class ServerError extends ErrorHandler {
     sendInternalError(response: Response){
         response.status(500).send(ErrorCodes[500])
     }

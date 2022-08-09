@@ -32,13 +32,11 @@
         })
 
         class ServerDAO {
-            connect(req){
+            connect(req) {
                 return new Promise((resolve, reject) => {
                     axios(req).then((response) => {
                         resolve(response)
                     }).catch((error) => {   
-                        console.log(status)
-                        console.log(error.response.status)
                         reject(
                             ErrorCodes.hasOwnProperty(error.response.status) ?
                             ErrorCodes[error.response.status] :
@@ -48,8 +46,6 @@
                 })
             }
         }
-
-
     </script>
 
 
@@ -164,7 +160,6 @@
                 <TestAuth />
             </React.Fragment>
         );
-
     </script>
 
 </body>

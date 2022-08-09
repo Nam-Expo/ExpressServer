@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { MongoServerError } from "mongodb";
+import { ErrorHandler } from "./ErrorHandler";
 
 interface ErrorCodesADT {
     [key: number] : string
@@ -16,17 +17,19 @@ const ErrorCodes: ErrorCodesADT = Object.freeze({
 })
 
 
-export const dataBaseError = (error: MongoServerError, response: Response) => {
-    let code = 590;
+export class DataBaseError extends ErrorHandler {
 
+    handleError(error: MongoServerError, response: Response){
+        let code = 590;
 
-    switch(error.code){
-        case 11000:
-            code = 550
+        switch(error.code){
+            case 11000:
+                code = 550
 
-        default:
-            console.error(error)
+            default:
+                console.error(error)
+        }
+        
+        response.status(code).send(ErrorCodes[code])
     }
-
-    response.status(code).send(ErrorCodes[code])
 }

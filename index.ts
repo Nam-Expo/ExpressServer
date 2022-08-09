@@ -1,28 +1,29 @@
 import 'dotenv/config' 
-import https from "https"
-import fs from 'fs'
-import { NextFunction, Request, response, Response } from "express"
+import path from 'path'
+import favicon from 'serve-favicon'
+import { NextFunction, Request, Response } from "express"
 import express from "express"
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import { AuthHandlers, TestHandlers } from './handlers'
 import { ServerError } from './error-handling/ServerError'
+import { Logger } from './error-handling/Logger'
+import { DataBaseError } from './error-handling/DataBaseError'
+import { LogHandlers } from './handlers/LogHandler'
 
 const app = express()
-const serverError = new ServerError()
+
+const logger = new Logger()
+const dataBaseError = new DataBaseError(logger)
+const serverError = new ServerError(logger)
 
 app.use(
-    (request: Request, response: Response, next: NextFunction) => {
-        console.log('recvied req: ', request.path)
-        next()
-    },
     (request: Request, response: Response, next: NextFunction) => {
         response.set({
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         })
-
-        if (request.method === 'OPTIONS') {11
+        if (request.method === 'OPTIONS') {
             response.sendStatus(200)
         }
         else {
@@ -35,16 +36,15 @@ app.use(
 
 app.use(express.static('public'))
 
-let authHandlers = new AuthHandlers(app, serverError)
+let logHandler = new LogHandlers(app, serverError, dataBaseError, logger)
+logHandler.build()
+
+let authHandlers = new AuthHandlers(app, serverError, dataBaseError)
 authHandlers.build()
 
-let testHandlers = new TestHandlers(app, serverError)
+let testHandlers = new TestHandlers(app, serverError, dataBaseError)
 testHandlers.build()
 
-
-https.createServer( {
-    key: fs.readFileSync("key.pem"),
-    cert: fs.readFileSync("cert.pem"),
-  },app).listen(8080, ()=>{
+app.listen(8080, () => {
     console.log('server is runing at port 8080')
 });

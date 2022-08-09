@@ -4,7 +4,7 @@ import { MongoServerError } from "mongodb"
 import { AuthBuilder, LoginUserBuilder, UserBuilder } from "../accessors/User"
 import { getAccount, login } from "../db/fetch"
 import { addUser } from "../db/insert"
-import { dataBaseError } from "../error-handling/DataBaseError"
+import { DataBaseError } from "../error-handling/DataBaseError"
 import { ServerError } from "../error-handling/ServerError"
 import { AccountDB, Auth, JWTVerified, LoginUser, User } from "../types"
 import equal from 'deep-equal'
@@ -24,50 +24,51 @@ const generateCookie = (response: Response, user: LoginUser) => {
 
 export class AuthHandlers extends Handler {
     async authenticationMiddleWear(request: Request, response: Response, next: NextFunction) {
-        if (request.cookies.auth) {
-            let auth: Auth = new AuthBuilder()
-                .setToken(request.cookies.auth.token)
-                .setUsername(request.cookies.auth.username)
-                .build()
-
-            let account: AccountDB | null = await getAccount(auth.username)
-
-            if (account === null) {
-                this.serverError.sendAccountDoesNotExists(response)
-            }
-            else {
-                let jwtVerify = verify(account, auth.token)
-
-                if (jwtVerify === 'expired' || jwtVerify === 'bad') {
-                    let errorFunction = jwtVerify === 'expired' ? this.serverError.sendExpiredToken : this.serverError.sendBadToken
-                    errorFunction(response)
-                }
-                else {
-                    let jwtAccount = {
-                        username: jwtVerify.username,
-                        password: jwtVerify.password
-                    }
-                    let dataBaseAcount = {
-                        username: account.username,
-                        password: account.password
-                    }
-                    
-                    if (!equal(jwtAccount, dataBaseAcount)) {
-                        this.serverError.sendBadToken(response)
-                    }
-                    else {
-                        next()
-                    }
-                }
-            }
+        if (request.path === '/register' || request.path === '/test' || request.path === '/login' || request.path === '/logout')  {
+            next()
         }
         else {
-            if (request.path === '/register' || request.path === '/test' || request.path === '/login' || request.path === '/logout')  {
-                next()
+            if (request.cookies.auth) {
+                let auth: Auth = new AuthBuilder()
+                    .setToken(request.cookies.auth.token)
+                    .setUsername(request.cookies.auth.username)
+                    .build()
+    
+                let account: AccountDB | null = await getAccount(auth.username)
+                console.table(account)
+                if (account === null) {
+                    this.serverError.sendAccountDoesNotExists(response)
+                }
+                else {
+                    let jwtVerify = verify(account, auth.token)
+    
+                    if (jwtVerify === 'expired' || jwtVerify === 'bad') {
+                        let errorFunction = jwtVerify === 'expired' ? this.serverError.sendExpiredToken : this.serverError.sendBadToken
+                        errorFunction(response)
+                    }
+                    else {
+                        let jwtAccount = {
+                            username: jwtVerify.username,
+                            password: jwtVerify.password
+                        }
+                        let dataBaseAcount = {
+                            username: account.username,
+                            password: account.password
+                        }
+                        
+                        if (!equal(jwtAccount, dataBaseAcount)) {
+                            this.serverError.sendBadToken(response)
+                        }
+                        else {
+                            next()
+                        }
+                    }
+                }
             }
             else {
                 this.serverError.sendUnAuthorizedAccess(response)
             }
+           
         }
     }
 
@@ -91,7 +92,7 @@ export class AuthHandlers extends Handler {
                     this.serverError.sendInternalError(response)
                 }
             }).catch((error: MongoServerError) => {
-                dataBaseError(error, response)
+                this.dataBaseError.handleError(error, response)
             })
         }
         catch (error: TypeError | any) {
@@ -111,7 +112,7 @@ export class AuthHandlers extends Handler {
                 .setUsername(request.body.username)
                 .setPassword(request.body.password)
                 .build();
-    
+            console.table(loginUser)
             login(loginUser).then((status: boolean) => {
                 if (status) {
                     generateCookie(response, loginUser)

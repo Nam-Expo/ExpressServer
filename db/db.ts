@@ -1,4 +1,4 @@
-import { MongoClient, MongoClientOptions } from "mongodb"
+import { MongoClient, MongoServerSelectionError } from "mongodb"
 import { dbPass } from "../enviromentVar";
 
 // Connection URI
@@ -25,7 +25,12 @@ async function test() {
         console.log("Connected successfully to database");
     } 
     catch(error){
-        console.error(error)
+        if(error instanceof MongoServerSelectionError){
+            throw new Error('cant connect to DB, most likely trying to access from a non approved IP address')
+        }
+        else{
+            console.error(error)
+        }
     }
     finally {
         // Ensures that the client will close when you finish/error
