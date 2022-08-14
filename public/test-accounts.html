@@ -11,7 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js"></script>
 </head>
 <body>
+    <div>
 
+    </div>
     <div id='root'></div>
 
     <script>
@@ -34,9 +36,9 @@
         class ServerDAO {
             connect(req) {
                 return new Promise((resolve, reject) => {
-                    axios(req).then((response) => {
-                        resolve(response)
-                    }).catch((error) => {   
+                    axios(req)
+                    .then(resolve)
+                    .catch((error) => {   
                         reject(
                             ErrorCodes.hasOwnProperty(error.response.status) ?
                             ErrorCodes[error.response.status] :
@@ -129,10 +131,10 @@
                 let serverDao = new ServerDAO()
 
                 serverDao.connect({
-                        method: 'post',
-                        url: '/register',
-                        data: { username: userName, email,  password, type }
-                    })
+                    method: 'post',
+                    url: '/register',
+                    data: { username: userName, email,  password, type }
+                })
                     .then((res) => setRes(JSON.stringify(res)))
                     .catch((error) => setRes('errored: ' + error))
             }

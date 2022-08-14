@@ -13,7 +13,27 @@ const insert = async (data: any, collectionName: Collection) => {
     await client.close()
 }
 
-export const addUser = async (account: AccountDB) => {
+export const addAuth = async (account: AccountDB) => {
     console.log('inserting account: ', account)
     await insert(account, "Accounts")
+}
+
+export const addUser = async (username: string) => {
+    return await insert({
+        username,
+        following: []
+    }, "Users")
+}
+
+export const addServer = async (username: string, organization: string) => {
+    return await insert({
+        username,
+        organization
+    }, "Servers")
+}
+
+export const addOrganization = async (organization: string) => {
+    return await insert({
+        organization
+    }, "Organizations")
 }

@@ -5,17 +5,17 @@ import { NextFunction, Request, Response } from "express"
 import express from "express"
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
-import { AuthHandlers, TestHandlers } from './handlers'
+import { AuthHandlers, TestHandlers, LogHandlers, AccountTypeHandler } from './handlers'
 import { ServerError } from './error-handling/ServerError'
 import { Logger } from './error-handling/Logger'
 import { DataBaseError } from './error-handling/DataBaseError'
-import { LogHandlers } from './handlers/LogHandler'
 
 const app = express()
 
 const logger = new Logger()
 const dataBaseError = new DataBaseError(logger)
 const serverError = new ServerError(logger)
+
 
 app.use(
     (request: Request, response: Response, next: NextFunction) => {
@@ -44,6 +44,9 @@ authHandlers.build()
 
 let testHandlers = new TestHandlers(app, serverError, dataBaseError)
 testHandlers.build()
+
+let accountTypeHandler = new AccountTypeHandler(app, serverError, dataBaseError)
+accountTypeHandler.build()
 
 app.listen(8080, () => {
     console.log('server is runing at port 8080')

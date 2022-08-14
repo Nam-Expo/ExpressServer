@@ -3,13 +3,10 @@ import { verify, sign } from "../authentication/jwt"
 import { MongoServerError } from "mongodb"
 import { AuthBuilder, LoginUserBuilder, UserBuilder } from "../accessors/User"
 import { getAccount, login } from "../db/fetch"
-import { addUser } from "../db/insert"
-import { DataBaseError } from "../error-handling/DataBaseError"
-import { ServerError } from "../error-handling/ServerError"
+import { addAuth } from "../db/insert"
 import { AccountDB, Auth, JWTVerified, LoginUser, User } from "../types"
 import equal from 'deep-equal'
 import { Handler } from "./Handler"
-
 
 const generateCookie = (response: Response, user: LoginUser) => {
     let jwt = sign(user)
@@ -35,7 +32,7 @@ export class AuthHandlers extends Handler {
                     .build()
     
                 let account: AccountDB | null = await getAccount(auth.username)
-                console.table(account)
+ 
                 if (account === null) {
                     this.serverError.sendAccountDoesNotExists(response)
                 }
@@ -60,6 +57,10 @@ export class AuthHandlers extends Handler {
                             this.serverError.sendBadToken(response)
                         }
                         else {
+                            request.addListener('getAccount', () => {
+                                request.emit('account', dataBaseAcount)
+                            })
+
                             next()
                         }
                     }
@@ -82,7 +83,7 @@ export class AuthHandlers extends Handler {
                     .setType(request.body.type)
                     .build()
 
-            addUser(newUser).then(() => {
+            addAuth(newUser).then(() => {
                 try {
                     generateCookie(response, { username: newUser.username, password: newUser.password })
                     response.status(200).send('ok')
@@ -141,10 +142,17 @@ export class AuthHandlers extends Handler {
         response.sendStatus(200);
     }
 
+    async getAccountType(request: Request, response: Response, next: NextFunction){
+        let account = await this.getAccount(request)
+
+        response.json({ accountType: account.type })
+    }
+
     build(){
         this.app.use((...args) => this.authenticationMiddleWear(...args))
         this.app.post('/register', (...args) => this.register(...args))
         this.app.post('/login',  (...args) => this.login(...args))
         this.app.post('/logout',  (...args) => this.logout(...args))
+        this.app.get('/accountType', (...args) => this.getAccountType(...args))
     }
 }
